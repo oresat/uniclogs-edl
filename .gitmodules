@@ -1,0 +1,3 @@
+[submodule "OpenCCSDS"]
+	path = OpenCCSDS
+	url = https://github.com/oresat/OpenCCSDS.git
