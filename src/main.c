@@ -7,36 +7,75 @@
 #include <unistd.h>
 
 #include "common.h"
-#include "command.h"
+#include "client.h"
+#include "cmd.h"
 #include "file.h"
 
-bool verbose_flag = false;
-op_t operation = OP_NONE;
+#define MAXBUF 256
 
 int main(int argc, char *argv[])
 {
-    char *filename = NULL;
-    uint8_t cmd = 0;
+    char *hostname = "127.0.0.1";
+    char *port = "52001";
 	int c;
+    char buf[MAXBUF];
 
 	/* Command line argument processing */
-	while ((c = getopt(argc, argv, "c:f:v")) != -1) {
+	while ((c = getopt(argc, argv, "h:p:s:v:m:")) != -1) {
 		switch (c) {
-        case 'c':
-            cmd = strtoul(optarg, NULL, 0);
+        case 'h':
+            hostname = optarg;
             break;
-        case 'f':
-            filename = optarg;
+        case 'p':
+            port = optarg;
+            break;
+        case 's':
+            scid = strtoul(optarg, NULL, 0);
             break;
         case 'v':
-            verbose_flag = true;
+            vcid = strtoul(optarg, NULL, 0);
+            if (vcid > 31)
+                goto usage;
+            break;
+        case 'm':
+            mapid = strtoul(optarg, NULL, 0);
+            if (mapid > 15)
+                goto usage;
             break;
         case '?':
         default:
-            fprintf(stderr, "Usage: %s -c <cmd_code> -f <filename> [-v]\n", argv[0]);
-            exit(EXIT_FAILURE);
+            goto usage;
 		}
 	}
 
+    udp_start(hostname, port);
+
+    while (fgets(buf, MAXBUF, stdin)) {
+        char src[256], dst[32];
+        uint32_t arg;
+        size_t len;
+
+        buf[strcspn(buf, "\n")] = '\0';
+        if (!strcmp(buf, "exit")) {
+            break;
+        } else if (sscanf(buf, "tx %x", &arg) == 1) {
+            if (mapid == 16) {
+                mapid = DEFAULT_MAPID_CMD;
+            }
+            send_cmd(0, &arg, 1);
+        } else if (sscanf(buf, "upload %255s %31s", src, dst) == 2) {
+            if (mapid == 16) {
+                mapid = DEFAULT_MAPID_FILE;
+            }
+            len = send_file(src, dst);
+            printf("Sent %lu bytes\n", len);
+        }
+    }
+
+    udp_stop();
+
 	exit(EXIT_SUCCESS);
+usage:
+    fprintf(stderr, "Usage: %s [-h <host>] [-p <port>] [-s <scid>] [-v <vcid>] [-m <mapid>]\n", argv[0]);
+    exit(EXIT_FAILURE);
 }

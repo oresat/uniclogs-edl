@@ -1,7 +1,7 @@
 # General definitions
 TARGET = edl_cli
 CFLAGS = -Wall -g -Og
-LDFLAGS = -lrt
+LDFLAGS = -lrt -lpthread
 
 # Include OpenCCSDS sources
 CCSDS_ROOT = OpenCCSDS
@@ -11,7 +11,8 @@ include $(CCSDS_ROOT)/ccsds.mk
 SRCDIR = src
 EDL_INC = include
 EDL_SRC = $(SRCDIR)/common.c	\
-		  $(SRCDIR)/command.c	\
+		  $(SRCDIR)/client.c	\
+		  $(SRCDIR)/cmd.c		\
 		  $(SRCDIR)/file.c		\
 		  $(SRCDIR)/main.c
 

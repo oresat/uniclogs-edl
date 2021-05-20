@@ -13,16 +13,16 @@ ssize_t send_file_seg(FILE *file, char *dest, off_t off, size_t len)
     size_t ret;
 
     /* Allocate frame and reserve space */
-    frame = fb_alloc(FB_MAX_LEN);
+    frame = fb_alloc(FB_MAX_LEN, NULL);
     if (frame == NULL) {
-        fprintf(stderr, "Error allocating frame: %s\r", strerror(errno));
+        fprintf(stderr, "Error allocating frame: %s\n", strerror(errno));
         return -1;
     }
     fb_reserve(frame, USLP_MAX_HEADER_LEN + sizeof(file_xfr_t));
     frame->data_ptr = fb_put(frame, len);
     if (frame->data_ptr == NULL) {
-        fprintf(stderr, "Error reserving space for data\r");
-        fb_free(frame);
+        fprintf(stderr, "Error reserving space for data\n");
+        fb_free(frame, NULL);
         return -1;
     }
 
@@ -30,15 +30,15 @@ ssize_t send_file_seg(FILE *file, char *dest, off_t off, size_t len)
     fseek(file, off, SEEK_SET);
     ret = fread(frame->data_ptr, 1, len, file);
     if (ret != len) {
-        fprintf(stderr, "Error in file read\r");
-        fb_free(frame);
+        fprintf(stderr, "Error in file read\n");
+        fb_free(frame, NULL);
         return -1;
     }
 
     xfr_hdr = fb_push(frame, sizeof(file_xfr_t));
     if (xfr_hdr == NULL) {
-        fprintf(stderr, "Error reserving space for payload header\r");
-        fb_free(frame);
+        fprintf(stderr, "Error reserving space for payload header\n");
+        fb_free(frame, NULL);
         return -1;
     }
     memcpy(xfr_hdr->filename, dest, NAME_MAX - 1);
@@ -46,7 +46,7 @@ ssize_t send_file_seg(FILE *file, char *dest, off_t off, size_t len)
     xfr_hdr->off = off;
     xfr_hdr->len = len;
 
-    uslp_map_send(&edl_link, frame, 0, 1, true);
+    uslp_map_send(&edl_link, frame, vcid, mapid, true);
 
     return ret;
 }
@@ -60,7 +60,7 @@ size_t send_file(char *src, char *dest)
     /* Open file */
     file = fopen(src, "rb");
     if (file == NULL) {
-        fprintf(stderr, "Error opening file %s: %s\r", src, strerror(errno));
+        fprintf(stderr, "Error opening file %s: %s\n", src, strerror(errno));
         exit(EXIT_FAILURE);
     }
 

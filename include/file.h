@@ -9,8 +9,8 @@
 
 typedef struct {
     char filename[NAME_MAX];
-    off_t off;
-    size_t len;
+    uint32_t off;
+    uint32_t len;
     uint8_t data[];
 } file_xfr_t;
 
